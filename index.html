@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Platformer Game with Screen Scroll</title>
+    <title>Platformer Game with Screen Scroll and Scoring</title>
     <style>
         body, html { margin: 0; padding: 0; overflow: hidden; }
         #gameCanvas { background-color: #87CEEB; }
@@ -18,7 +18,7 @@
         // Game settings
         const gravity = 0.5;
         const friction = 0.8;
-        const baseJump = -10; // Base jump velocity
+        const baseJump = -10;
 
         // Player
         let player = {
@@ -34,7 +34,11 @@
 
         // Platforms
         let platforms = [];
-        for(let i = 0; i < 10; i++) {
+        let platformsTracker = new Array(10).fill(false);
+        let lastPlatformY = canvas.height;
+        let score = 0;
+
+        for (let i = 0; i < 10; i++) {
             platforms.push({
                 x: Math.random() * (canvas.width - 50),
                 y: canvas.height - (100 * i) - 50,
@@ -77,15 +81,24 @@
 
             // Screen scroll
             if (player.y < canvas.height / 4) {
-                player.y += Math.abs(player.velY);
+                let scrollAmount = Math.abs(player.velY);
+                player.y += scrollAmount;
                 platforms.forEach(platform => {
-                    platform.y += Math.abs(player.velY);
-                    if (platform.y > canvas.height) {
-                        platform.y = 0;
-                        platform.x = Math.random() * (canvas.width - platform.width);
-                    }
+                    platform.y += scrollAmount;
                 });
+                lastPlatformY += scrollAmount; // Update lastPlatformY to maintain its relevance
             }
+
+            // Reposition platforms that scrolled off the screen
+            let offScreenPlatforms = platforms.filter(platform => platform.y > canvas.height);
+            offScreenPlatforms.sort((a, b) => a.y - b.y);
+            let newY = -50; // Start above the canvas for repositioning
+            offScreenPlatforms.forEach((platform, index) => {
+                platform.y = newY - (index * 60); // Ensure a gap of 60 pixels between repositioned platforms
+                platform.x = Math.random() * (canvas.width - platform.width); // Randomize x position
+                platformsTracker[platforms.indexOf(platform)] = false; // Reset tracker for repositioned platforms
+                newY = platform.y;
+            });
 
             // Collision with the canvas edges
             if (player.x >= canvas.width - player.width) {
@@ -94,14 +107,14 @@
                 player.x = 0;
             }
 
-            if(player.y >= canvas.height - player.height){
+            if (player.y >= canvas.height - player.height) {
                 player.y = canvas.height - player.height;
                 player.jumping = false;
                 player.velY = 0;
             }
 
-            // Platform collision
-            platforms.forEach(platform => {
+            // Platform collision and score logic
+            platforms.forEach((platform, index) => {
                 if (
                     player.x < platform.x + platform.width &&
                     player.x + player.width > platform.x &&
@@ -112,8 +125,19 @@
                     player.jumping = false;
                     player.velY = 0;
                     player.y = platform.y - player.height;
+                    if (!platformsTracker[index]) { // Check if the platform has not been landed on before
+                        // Now also ensure that the score only increases and lastPlatformY updates
+                        // for platforms that are higher than the last one player landed on
+                        if (platform.y < lastPlatformY) { 
+                            let numOfPlatformsGap = platforms.filter(p => p.y > platform.y && p.y < lastPlatformY).length + 1;
+                            score += numOfPlatformsGap;
+                            platformsTracker[index] = true; // Mark platform as touched
+                            lastPlatformY = platform.y; // Correctly update lastPlatformY here
+                        }
+                    }
                 }
             });
+
 
             // Clear canvas
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -127,6 +151,11 @@
                 ctx.fillStyle = 'black';
                 ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
             });
+
+            // Display score
+            ctx.font = '20px Arial';
+            ctx.fillStyle = 'black';
+            ctx.fillText('Score: ' + score, 10, 30);
 
             requestAnimationFrame(updateGame);
         }
