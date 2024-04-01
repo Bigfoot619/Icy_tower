@@ -49,6 +49,9 @@
             });
         }
 
+        platforms[0].x = player.x - platforms[0].width / 2; // Adjusted for proper centering
+        platforms[0].y = player.y + player.height; // Directly below the player
+
         let keys = [];
         window.addEventListener('keydown', function(e) {
             keys[e.keyCode] = true;
@@ -86,7 +89,7 @@
                 });
                 lastPlatformY += scrollAmount;
             }
-
+            
             platforms.forEach((platform, index) => {
                 if (
                     player.x < platform.x + platform.width &&
