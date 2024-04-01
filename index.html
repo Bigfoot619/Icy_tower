@@ -15,12 +15,10 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
-        // Game settings
         const gravity = 0.5;
         const friction = 0.8;
         const baseJump = -10;
 
-        // Player
         let player = {
             x: canvas.width / 2,
             y: canvas.height - 150,
@@ -32,28 +30,31 @@
             jumping: false
         };
 
-        // Platforms
         let platforms = [];
         let platformsTracker = new Array(10).fill(false);
         let lastPlatformY = canvas.height;
         let score = 0;
 
+        // Initialize platforms and add a unique label property to the last platform
         for (let i = 0; i < 10; i++) {
             platforms.push({
                 x: Math.random() * (canvas.width - 50),
                 y: canvas.height - (100 * i) - 50,
                 width: 100,
-                height: 10
+                height: 10,
+                timer: 0,
+                falling: false,
+                // Only the last platform gets the initial label
+                label: i === 9 ? 10 : undefined
             });
         }
 
-        // Key Listener
         let keys = [];
         window.addEventListener('keydown', function(e) {
             keys[e.keyCode] = true;
-            if (e.keyCode == 32 && !player.jumping) { // Space key for jump
+            if (e.keyCode == 32 && !player.jumping) {
                 player.jumping = true;
-                player.velY = baseJump - Math.abs(player.velX); // Higher jump if running faster
+                player.velY = baseJump - Math.abs(player.velX);
             }
         });
         window.addEventListener('keyup', function(e) {
@@ -61,13 +62,12 @@
         });
 
         function updateGame() {
-            // Check key inputs
-            if (keys[39]) { // right arrow
+            if (keys[39]) {
                 if (player.velX < player.speed) {
                     player.velX++;
                 }
-            }         
-            if (keys[37]) { // left arrow
+            }
+            if (keys[37]) {
                 if (player.velX > -player.speed) {
                     player.velX--;
                 }
@@ -75,45 +75,18 @@
 
             player.velX *= friction;
             player.velY += gravity;
-
             player.x += player.velX;
             player.y += player.velY;
 
-            // Screen scroll
             if (player.y < canvas.height / 4) {
                 let scrollAmount = Math.abs(player.velY);
                 player.y += scrollAmount;
                 platforms.forEach(platform => {
                     platform.y += scrollAmount;
                 });
-                lastPlatformY += scrollAmount; // Update lastPlatformY to maintain its relevance
+                lastPlatformY += scrollAmount;
             }
 
-            // Reposition platforms that scrolled off the screen
-            let offScreenPlatforms = platforms.filter(platform => platform.y > canvas.height);
-            offScreenPlatforms.sort((a, b) => a.y - b.y);
-            let newY = -50; // Start above the canvas for repositioning
-            offScreenPlatforms.forEach((platform, index) => {
-                platform.y = newY - (index * 60); // Ensure a gap of 60 pixels between repositioned platforms
-                platform.x = Math.random() * (canvas.width - platform.width); // Randomize x position
-                platformsTracker[platforms.indexOf(platform)] = false; // Reset tracker for repositioned platforms
-                newY = platform.y;
-            });
-
-            // Collision with the canvas edges
-            if (player.x >= canvas.width - player.width) {
-                player.x = canvas.width - player.width;
-            } else if (player.x <= 0) {
-                player.x = 0;
-            }
-
-            if (player.y >= canvas.height - player.height) {
-                player.y = canvas.height - player.height;
-                player.jumping = false;
-                player.velY = 0;
-            }
-
-            // Platform collision and score logic
             platforms.forEach((platform, index) => {
                 if (
                     player.x < platform.x + platform.width &&
@@ -125,34 +98,55 @@
                     player.jumping = false;
                     player.velY = 0;
                     player.y = platform.y - player.height;
-                    if (!platformsTracker[index]) { // Check if the platform has not been landed on before
-                        // Now also ensure that the score only increases and lastPlatformY updates
-                        // for platforms that are higher than the last one player landed on
-                        if (platform.y < lastPlatformY) { 
+                    if (!platformsTracker[index]) {
+                        if (platform.y < lastPlatformY) {
                             let numOfPlatformsGap = platforms.filter(p => p.y > platform.y && p.y < lastPlatformY).length + 1;
                             score += numOfPlatformsGap;
-                            platformsTracker[index] = true; // Mark platform as touched
-                            lastPlatformY = platform.y; // Correctly update lastPlatformY here
+                            platformsTracker[index] = true;
+                            lastPlatformY = platform.y;
                         }
+                        platform.timer = 0;
+                    } else {
+                        platform.timer += 1 / 60;
+                        if (platform.timer > 3) {
+                            platform.falling = true;
+                        }
+                    }
+                } else {
+                    platform.timer = 0;
+                }
+                if (platform.falling) {
+                    platform.y += 5;
+                }
+                // Reset platforms and increment label if applicable
+                if (platform.y > canvas.height) {
+                    platform.y = -70;
+                    platform.x = Math.random() * (canvas.width - platform.width);
+                    platformsTracker[index] = false;
+                    platform.falling = false;
+                    platform.timer = 0;
+                    if (platform.label !== undefined) {
+                        platform.label += 10; // Increment label by 10
                     }
                 }
             });
 
-
-            // Clear canvas
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Draw player
-            ctx.fillStyle = 'red';
-            ctx.fillRect(player.x, player.y, player.width, player.height);
-
-            // Draw platforms
             platforms.forEach(platform => {
                 ctx.fillStyle = 'black';
                 ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
+                // Draw label on the platform
+                if (platform.label !== undefined) {
+                    ctx.font = '14px Arial';
+                    ctx.fillStyle = 'white';
+                    ctx.fillText('Platform ' + platform.label, platform.x + 20, platform.y + 15);
+                }
             });
 
-            // Display score
+            ctx.fillStyle = 'red';
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+
             ctx.font = '20px Arial';
             ctx.fillStyle = 'black';
             ctx.fillText('Score: ' + score, 10, 30);
