@@ -5,20 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Platformer Game with Screen Scroll and Scoring</title>
     <style>
+        /* Setting basic style to remove margins and padding, and prevent overflow */
         body, html { margin: 0; padding: 0; overflow: hidden; }
+        /* Setting the background color of the canvas where the game will be drawn */
         #gameCanvas { background-color: #87CEEB; }
     </style>
 </head>
 <body>
-    <canvas id="gameCanvas" width="400" height="600"></canvas>
+    <!-- Canvas element where the game will be rendered -->
+    <canvas id="gameCanvas" width="600" height="800"></canvas>
     <script>
+        // Getting a reference to the canvas and its context to draw on it
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
+        // Defining constants for gravity, friction, and the base jump velocity
         const gravity = 0.5;
-        const friction = 0.8;
+        const friction = 0.9;
         const baseJump = -10;
 
+        // Initializing the player with properties such as position, size, velocity, and jumping status
         let player = {
             x: canvas.width / 2,
             y: canvas.height - 150,
@@ -30,31 +36,35 @@
             jumping: false
         };
 
-        let platforms = [];
-        let platformsTracker = new Array(10).fill(false);
-        let lastPlatformY = canvas.height;
-        let score = 0;
+        // Initializing platform variables
+        let platforms = []; // Array to hold platform objects
+        let platformsTracker = new Array(10).fill(false); // Tracker for scoring logic
+        let lastPlatformY = canvas.height; // Y position of the last platform (for scoring)
+        let score = 0; // Player's score
 
-        // Initialize platforms and add a unique label property to the last platform
+        // Creating platforms with a loop and adding a unique index for ordering upon reset
         for (let i = 0; i < 10; i++) {
             platforms.push({
-                x: Math.random() * (canvas.width - 50),
-                y: canvas.height - (100 * i) - 50,
+                x: Math.random() * (canvas.width - 50), // Random x position
+                y: canvas.height - (100 * i) - 50, // Stacked y positions
                 width: 100,
                 height: 10,
-                timer: 0,
-                falling: false,
-                // Only the last platform gets the initial label
-                label: i === 9 ? 10 : undefined
+                timer: 0, // Timer for falling logic
+                falling: false, // Falling status
+                label: i === 9 ? 10 : undefined, // Label for the last platform
+                index: i // Index for maintaining order upon reset
             });
         }
 
-        platforms[0].x = player.x - platforms[0].width / 2; // Adjusted for proper centering
-        platforms[0].y = player.y + player.height; // Directly below the player
+        // Adjust the first platform to be directly under the player
+        platforms[0].x = player.x - platforms[0].width / 2;
+        platforms[0].y = player.y + player.height;
 
+        // Key handling to control player movement and jumping
         let keys = [];
         window.addEventListener('keydown', function(e) {
             keys[e.keyCode] = true;
+            // Spacebar key for jumping
             if (e.keyCode == 32 && !player.jumping) {
                 player.jumping = true;
                 player.velY = baseJump - Math.abs(player.velX);
@@ -64,23 +74,30 @@
             keys[e.keyCode] = false;
         });
 
+        // Main game update function
         function updateGame() {
+            // Right arrow key increases velocity to the right
             if (keys[39]) {
                 if (player.velX < player.speed) {
                     player.velX++;
                 }
             }
+            // Left arrow key increases velocity to the left
             if (keys[37]) {
                 if (player.velX > -player.speed) {
                     player.velX--;
                 }
             }
 
+            // Applying friction and gravity to player's velocity
             player.velX *= friction;
             player.velY += gravity;
+
+            // Updating player's position based on velocity
             player.x += player.velX;
             player.y += player.velY;
 
+            // Check for screen scroll
             if (player.y < canvas.height / 4) {
                 let scrollAmount = Math.abs(player.velY);
                 player.y += scrollAmount;
@@ -89,8 +106,13 @@
                 });
                 lastPlatformY += scrollAmount;
             }
-            
+
+            // Array to collect platforms that need to be reset
+            let resetPlatforms = [];
+
+            // Loop through platforms for collision and reset logic
             platforms.forEach((platform, index) => {
+                // Collision detection with platforms
                 if (
                     player.x < platform.x + platform.width &&
                     player.x + player.width > platform.x &&
@@ -98,9 +120,11 @@
                     player.y + player.height < platform.y + platform.height &&
                     player.velY >= 0
                 ) {
+                    // Reset jumping and velocity upon landing
                     player.jumping = false;
                     player.velY = 0;
                     player.y = platform.y - player.height;
+                    // Scoring logic
                     if (!platformsTracker[index]) {
                         if (platform.y < lastPlatformY) {
                             let numOfPlatformsGap = platforms.filter(p => p.y > platform.y && p.y < lastPlatformY).length + 1;
@@ -118,45 +142,60 @@
                 } else {
                     platform.timer = 0;
                 }
+                // Make platforms fall after timer exceeds threshold
                 if (platform.falling) {
                     platform.y += 5;
                 }
-                // Reset platforms and increment label if applicable
+
+                // Reset platforms that go off screen and collect them for sorting
                 if (platform.y > canvas.height) {
-                    platform.y = -70;
-                    platform.x = Math.random() * (canvas.width - platform.width);
                     platformsTracker[index] = false;
                     platform.falling = false;
                     platform.timer = 0;
                     if (platform.label !== undefined) {
                         platform.label += 10; // Increment label by 10
                     }
+                    resetPlatforms.push(platform); // Add to the list for sorting
                 }
             });
 
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // Sort and reposition reset platforms by their original index
+            if (resetPlatforms.length > 0) {
+                resetPlatforms.sort((a, b) => a.index - b.index); // Sort by original index
+            }
 
+            // Now reposition each platform in the sorted resetPlatforms list
+            resetPlatforms.forEach((platform, sortedIndex) => {
+                platform.y = -70 - (sortedIndex * 10); // Adjust 'y' position based on sorted order
+                platform.x = Math.random() * (canvas.width - platform.width); // Randomize 'x' position
+            });
+       
+            // Clear the canvas and redraw everything
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // Draw platforms
             platforms.forEach(platform => {
                 ctx.fillStyle = 'black';
                 ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
-                // Draw label on the platform
+                // Draw platform label if it exists
                 if (platform.label !== undefined) {
                     ctx.font = '14px Arial';
                     ctx.fillStyle = 'white';
                     ctx.fillText('Platform ' + platform.label, platform.x + 20, platform.y + 15);
                 }
             });
-
+            // Draw the player
             ctx.fillStyle = 'red';
             ctx.fillRect(player.x, player.y, player.width, player.height);
-
+            // Display the score
             ctx.font = '20px Arial';
             ctx.fillStyle = 'black';
             ctx.fillText('Score: ' + score, 10, 30);
 
+            // Request to update the game in the next frame
             requestAnimationFrame(updateGame);
         }
 
+        // Start the game loop
         updateGame();
     </script>
 </body>
