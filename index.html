@@ -210,9 +210,6 @@
                         platform.timer += 1 / 60;
                         if (platform.timer > 3) {
                             platform.falling = true;
-                            platform.enemies.forEach(enemy => {
-                                enemy.y += 5; // Make enemies fall at the same rate as the platform
-                            });
                         }
                     }
                 } else {
@@ -221,8 +218,10 @@
                 // Make platforms fall after timer exceeds threshold
                 if (platform.falling) {
                     platform.y += 5;
+                    platform.enemies.forEach(enemy => {
+                        enemy.y += 5; // Make enemies fall at the same rate as the platform
+                    });
                 }
-
                 if (platform.label !== undefined && platform.enemySpawnCounter % 2 === 0) { // Every two resets, spawn enemies
                     platform.showEnemies = true;
                 }
