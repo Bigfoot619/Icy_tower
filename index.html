@@ -13,7 +13,7 @@
 </head>
 <body>
     <!-- Canvas element where the game will be rendered -->
-    <canvas id="gameCanvas" width="700" height="800"></canvas>
+    <canvas id="gameCanvas" width="750" height="800"></canvas>
     <script>
         // Getting a reference to the canvas and its context to draw on it
         const canvas = document.getElementById('gameCanvas');
@@ -41,14 +41,13 @@
                 this.type = type;
                 this.x = x;
                 this.y = y; // Position adjustment if needed
-                this.width = 20;
+                this.width = 10;
                 this.height = 20;
-                this.platform = platform; // Reference to the platform for boundary checks
-                this.velX = 0; // Initialize horizontal velocity to 0
-            
+                this.velX = 0; // Initialize horizontal velocity to 0         
+                this.platform = platform;
                 // Specific attributes for Type2 enemies to control movement speed and direction
                 if (this.type === 'Type2') {
-                    this.velX = 0.5; // Set a starting velocity for movement
+                    this.velX = 10; // Set a starting velocity for movement
                 }
             }
         
@@ -57,7 +56,7 @@
                 if (this.type === 'Type2') {
                     // Update position based on velocity
                     this.x += this.velX;
-                
+
                     // Reverse direction upon reaching platform edges
                     if (this.x <= this.platform.x || this.x + this.width >= this.platform.x + this.platform.width) {
                         this.velX *= -1; // Reverse velocity direction
@@ -70,7 +69,6 @@
                 ctx.fillRect(this.x, this.y - this.height, this.width, this.height);
             }
         }
-
 
         // Initializing platform variables
         let platforms = []; // Array to hold platform objects
@@ -91,10 +89,18 @@
                 label: i === 9 ? 10 : undefined, // Label for the last platform
                 index: i,    // Index for maintaining order upon reset
                 enemies: [],
-                enemySpawnCounter: 1 // Counter to track spawning on 10th platform
+                enemySpawnCounter: 1, // Counter to track spawning on 10th platform
+                showEnemies: false // Initially, enemies are not visible
             });
         }
 
+        //Creating enemies
+        platforms[9].enemies.push(new Enemy('Type1', platforms[9].x + platforms[9].width * 0.25, platforms[9].y, platforms[9]));                       
+        platforms[9].enemies.push(new Enemy('Type1', platforms[9].x + platforms[9].width * 0.75, platforms[9].y, platforms[9]));
+
+        let spawnXForType2 = platforms[9].x + (platforms[9].width / 2) - 10; // Adjust as necessary
+        platforms[9].enemies.push(new Enemy('Type2', spawnXForType2, platforms[9].y, platforms[9]));
+        platforms[9].enemies.push(new Enemy('Type2', spawnXForType2 + 25, platforms[9].y, platforms[9])); // Slightly offset the second Type2 enemy
 
         // Adjust the first platform to be directly under the player
         platforms[0].x = player.x - platforms[0].width / 2;
@@ -115,20 +121,22 @@
         });
 
         function drawPlatformsAndEnemies() {
-                platforms.forEach(platform => {
-                    ctx.fillStyle = 'black';
-                    ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
-                      // Draw platform label if it exists
-                    if (platform.label !== undefined) {
-                        ctx.font = '14px Arial';
-                        ctx.fillStyle = 'white';
-                        ctx.fillText('Platform ' + platform.label, platform.x + 20, platform.y + 15);
-                    }
-                    // Draw any enemies present on the platform
+            platforms.forEach(platform => {
+                ctx.fillStyle = 'black';
+                ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
+                  // Draw platform label if it exists
+                if (platform.label !== undefined) {
+                    ctx.font = '14px Arial';
+                    ctx.fillStyle = 'white';
+                    ctx.fillText('Platform ' + platform.label, platform.x + 20, platform.y + 15);
+                }
+                // Draw any enemies present on the platform
+                if (platform.showEnemies) {
                     platform.enemies.forEach(enemy => {
                         enemy.update()
                         enemy.draw(ctx);
-                });
+                    });
+                }
             });
         }
 
@@ -163,14 +171,14 @@
                 player.y += scrollAmount;
                 platforms.forEach(platform => {
                     platform.y += scrollAmount;
-                    platform.enemies.forEach(enemy => {
-                        enemy.y += scrollAmount;
-                    });
+                    if (platform.showEnemies) {
+                        platform.enemies.forEach(enemy => {
+                        enemy.y = platform.y; // This assumes you want the enemy to appear on top of the platform
+                        });
+                    }
                 });
                 lastPlatformY += scrollAmount;
-         
             }
-
             // Array to collect platforms that need to be reset
             let resetPlatforms = [];
 
@@ -215,17 +223,24 @@
                     platform.y += 5;
                 }
 
+                if (platform.label !== undefined && platform.enemySpawnCounter % 2 === 0) { // Every two resets, spawn enemies
+                    platform.showEnemies = true;
+                }
+                else {
+                    platform.showEnemies = false;
+                }
+
                 // Reset platforms that go off screen and collect them for sorting
                 if (platform.y > canvas.height) {
                     platformsTracker[index] = false;
                     platform.falling = false;
                     platform.timer = 0;
-                    if (platform.label != undefined) {
+                    if (platform.label !== undefined) {
                         platform.label += 10; // Increment label by 10
                         platform.enemySpawnCounter++;
                     }
                     resetPlatforms.push(platform); // Add to the list for sorting
-                }
+                }           
             });
                   
             // Sort and reposition reset platforms by their original index
@@ -234,22 +249,14 @@
                 resetPlatforms.forEach((platform, sortedIndex) => {
                     platform.y = -70 - (sortedIndex * 10);
                     platform.x = Math.random() * (canvas.width - platform.width);
+                    if (platform.label !== undefined) {
+                        platform.enemies.forEach((enemy, i) => {
+                            enemy.y = platform.y; // Make enemies fall at the same rate as the platform
+                            enemy.x = platform.x + (platform.width / 5) * (i + 1) - enemy.width / 2;
+                        });
+                    }   
                 });
             }
-
-            // Enemy spawning logic for the 10th platform
-            platforms.forEach(platform => {
-                if (platform.label !== undefined) { // Checks if it's time to spawn on 10th platform
-                    if (platform.enemySpawnCounter % 2 === 0 && platform.enemySpawnCounter > 0) { // Every two resets, spawn enemies
-                        platform.enemies = []; // Clear existing enemies before spawning new ones
-                        platform.enemies.push(new Enemy('Type1', platform.x + platform.width * 0.25, platform.y, platform));                       
-                        platform.enemies.push(new Enemy('Type1', platform.x + platform.width * 0.75, platform.y, platform));
-                        platform.enemies.push(new Enemy('Type2', platform.x + Math.random() * (platform.width - 20), platform.y - 20, platform));
-                        platform.enemies.push(new Enemy('Type2', platform.x + Math.random() * (platform.width - 20), platform.y - 20, platform));
-                    }
-                }
-            });
-
             // Clear the canvas and redraw everything
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -267,7 +274,6 @@
             // Request to update the game in the next frame
             requestAnimationFrame(updateGame);
         }
-
         // Start the game loop
         updateGame();
     </script>
