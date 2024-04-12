@@ -23,19 +23,8 @@
         const gravity = 0.5;
         const friction = 0.9;
         const baseJump = -10;
-
-        // Initializing the player with properties such as position, size, velocity, and jumping status
-        let player = {
-            x: canvas.width / 2,
-            y: canvas.height - 150,
-            width: 20,
-            height: 20,
-            speed: 6,
-            velX: 0,
-            velY: 0,
-            jumping: false
-        };
-
+        let player, platforms, platformsTracker, lastPlatformY, score, keys;
+  
         class Enemy {
             constructor(type, x, y, platform) {
                 this.type = type;
@@ -43,12 +32,8 @@
                 this.y = y; // Position adjustment if needed
                 this.width = 10;
                 this.height = 20;
-                this.velX = 0; // Initialize horizontal velocity to 0         
+                this.velX = type === 'Type2' ? 5 : undefined // Initialize horizontal velocity to 0         
                 this.platform = platform;
-                // Specific attributes for Type2 enemies to control movement speed and direction
-                if (this.type === 'Type2') {
-                    this.velX = 10; // Set a starting velocity for movement
-                }
             }
         
             update() {
@@ -70,52 +55,59 @@
             }
         }
 
-        // Initializing platform variables
-        let platforms = []; // Array to hold platform objects
-        let platformsTracker = new Array(10).fill(false); // Tracker for scoring logic
-        platformsTracker[0] = true
-        let lastPlatformY = canvas.height; // Y position of the last platform (for scoring)
-        let score = 0; // Player's score
 
-        // Creating platforms with a loop and adding a unique index for ordering upon reset
-        for (let i = 0; i < 10; i++) {
-            platforms.push({
-                x: Math.random() * (canvas.width - (100 + Math.random() * 150)), // Random x position
-                y: canvas.height - (100 * i) - 50, // Stacked y positions
-                width: 100 + Math.random() * 100 ,
-                height: 10,
-                timer: 0, // Timer for falling logic
-                falling: false, // Falling status
-                label: i === 9 ? 10 : undefined, // Label for the last platform
-                index: i,    // Index for maintaining order upon reset
-                enemies: [],
-                enemySpawnCounter: 1, // Counter to track spawning on 10th platform
-                showEnemies: false // Initially, enemies are not visible
-            });
+        function initializeGame() {
+            player = {
+                x: canvas.width / 2,
+                y: canvas.height - 150,
+                width: 20,
+                height: 20,
+                speed: 6,
+                velX: 0,
+                velY: 0,
+                jumping: false
+            };
+
+            platforms = [];
+            platformsTracker = new Array(10).fill(false);
+            platformsTracker[0] = true;
+            lastPlatformY = canvas.height;
+            score = 0;
+
+            for (let i = 0; i < 10; i++) {
+                platforms.push({
+                    x: Math.random() * (canvas.width - (100 + Math.random() * 150)),
+                    y: canvas.height - (100 * i) - 50,
+                    width: 100 + Math.random() * 100,
+                    height: 10,
+                    timer: 0,
+                    falling: false,
+                    label: i === 9 ? 10 : undefined,
+                    index: i,
+                    enemies: [],
+                    enemySpawnCounter: 1,
+                    showEnemies: false
+                });
+            }
+
+            platforms[9].enemies.push(new Enemy('Type1', platforms[9].x + platforms[9].width * 0.25, platforms[9].y, platforms[9]));
+            platforms[9].enemies.push(new Enemy('Type1', platforms[9].x + platforms[9].width * 0.75, platforms[9].y, platforms[9]));
+            platforms[9].enemies.push(new Enemy('Type2', platforms[9].x + (platforms[9].width / 2) - 10, platforms[9].y, platforms[9]));
+            platforms[9].enemies.push(new Enemy('Type2', platforms[9].x + (platforms[9].width / 2) - 10 + 25, platforms[9].y, platforms[9]));
+
+            platforms[0].x = player.x - platforms[0].width / 2;
+            platforms[0].y = player.y + player.height;
+
+            keys = [];
         }
-
-        //Creating enemies
-        platforms[9].enemies.push(new Enemy('Type1', platforms[9].x + platforms[9].width * 0.25, platforms[9].y, platforms[9]));                       
-        platforms[9].enemies.push(new Enemy('Type1', platforms[9].x + platforms[9].width * 0.75, platforms[9].y, platforms[9]));
-
-        let spawnXForType2 = platforms[9].x + (platforms[9].width / 2) - 10; // Adjust as necessary
-        platforms[9].enemies.push(new Enemy('Type2', spawnXForType2, platforms[9].y, platforms[9]));
-        platforms[9].enemies.push(new Enemy('Type2', spawnXForType2 + 25, platforms[9].y, platforms[9])); // Slightly offset the second Type2 enemy
-
-        // Adjust the first platform to be directly under the player
-        platforms[0].x = player.x - platforms[0].width / 2;
-        platforms[0].y = player.y + player.height;
-
-        // Key handling to control player movement and jumping
-        let keys = [];
         window.addEventListener('keydown', function(e) {
             keys[e.keyCode] = true;
-            // Spacebar key for jumping
             if (e.keyCode == 32 && !player.jumping) {
                 player.jumping = true;
                 player.velY = baseJump - Math.abs(player.velX);
             }
         });
+        
         window.addEventListener('keyup', function(e) {
             keys[e.keyCode] = false;
         });
@@ -124,13 +116,11 @@
             platforms.forEach(platform => {
                 ctx.fillStyle = 'black';
                 ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
-                  // Draw platform label if it exists
                 if (platform.label !== undefined) {
                     ctx.font = '14px Arial';
                     ctx.fillStyle = 'white';
                     ctx.fillText('Platform ' + platform.label, platform.x + 20, platform.y + 15);
                 }
-                // Draw any enemies present on the platform
                 if (platform.showEnemies) {
                     platform.enemies.forEach(enemy => {
                         enemy.update()
@@ -139,8 +129,6 @@
                 }
             });
         }
-
-
         
         // Main game update function
         function updateGame() {
@@ -274,6 +262,7 @@
             requestAnimationFrame(updateGame);
         }
         // Start the game loop
+        initializeGame();
         updateGame();
     </script>
 </body>
