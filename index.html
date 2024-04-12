@@ -73,11 +73,57 @@
         let isGameOver = false; // Flag to track if the game is over
 
         // Defining constants for gravity, friction, and the base jump velocity
-        const gravity = 0.5;
+        const gravity = 0.5;    
         const friction = 0.9;
         const baseJump = -10;
         let player, platforms, platformsTracker, lastPlatformY, score, keys;
+        let star = null; // The star object
+        let immune = false; // Flag for immunity
+        let immuneTimer = 0; // Timer for immunity
+
+        class Star {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.size = 20; // Size of the star
+            }
         
+            draw(ctx) {
+                const p = 5;
+                const m = 0.5;
+                ctx.beginPath();
+                ctx.fillStyle = 'yellow';
+                for (let i = 0; i < 2 * p; i++) {
+                    const angle = i * Math.PI / p;
+                    const r = i % 2 === 0 ? this.size : this.size * m;
+                    ctx.lineTo(this.x + r * Math.sin(angle), this.y - r * Math.cos(angle));
+                }
+                ctx.fill();
+                ctx.closePath();
+            }
+        }
+
+        function drawImmunityTimer(ctx) {
+                ctx.fillStyle = 'gold';
+                ctx.fillText('Immunity: ' + Math.ceil(immuneTimer) + 's', canvas.width - 200, 30);
+        }
+
+        function checkStarCollision() {
+            if (star && Math.abs(player.x - star.x) < player.width && Math.abs(player.y - star.y) < player.height) {
+                immune = true;
+                immuneTimer = 8; // 8 seconds of immunity
+                star = null; // Remove the star after collection
+            }
+        }
+        
+        function updateImmunity() {
+            if (immune) {
+                immuneTimer -= 1 / 60; // decrement the timer by the frame rate
+                if (immuneTimer <= 0) {
+                    immune = false; // reset immunity
+                }
+            }
+        }
         class Enemy {
             constructor(type, x, y, platform) {
                 this.type = type;
@@ -120,7 +166,7 @@
         ctx.fillText('Score: ' + score, 10, 30);
         }
         function checkEnemyCollisions(platform) {
-            if (!isGameOver) { // Only check collisions if the game is not over
+            if (!isGameOver && !immune) { // Only check collisions if the game is not over
                 platform.enemies.forEach(enemy => {
                     if (player.x < enemy.x + enemy.width &&
                         player.x + player.width > enemy.x &&
@@ -156,6 +202,8 @@
                 velY: 0,
                 jumping: false
             };
+
+            star = new Star(Math.random() * canvas.width, Math.random() * (canvas.height - 200) + 100);
 
             keys = [];
             platforms = [];
@@ -358,6 +406,11 @@
                 drawPlatformsAndEnemies();
                 drawPlayer(ctx);
                 drawScore(ctx);
+
+                if (star) star.draw(ctx);
+                checkStarCollision();
+                updateImmunity();
+                // if (immune) drawImmunityTimer(ctx);
 
                 // Request to update the game in the next frame
                 animationFrameId = requestAnimationFrame(updateGame);
