@@ -57,7 +57,7 @@
 </head>
 <body>
     <!-- Canvas element where the game will be rendered -->
-    <canvas id="gameCanvas" width="750" height="800"></canvas>
+    <canvas id="gameCanvas" width="750" height="700"></canvas>
     <div id="gameOverScreen">
         GAME OVER
         <button onclick="initializeGame(); startGame();">Play Again</button>
@@ -80,6 +80,7 @@
         let star = null; // The star object
         let immune = false; // Flag for immunity
         let immuneTimer = 0; // Timer for immunity
+        let scrollSpeed = 0.5; // Number of pixels to scroll each frame
 
         class Star {
             constructor(x, y) {
@@ -104,7 +105,7 @@
         }
 
         function drawImmunityTimer(ctx) {
-                ctx.fillStyle = 'gold';
+                ctx.fillStyle = 'red';
                 ctx.fillText('Immunity: ' + Math.ceil(immuneTimer) + 's', canvas.width - 200, 30);
         }
 
@@ -202,8 +203,9 @@
                 velY: 0,
                 jumping: false
             };
-
-            star = new Star(Math.random() * canvas.width, Math.random() * (canvas.height - 200) + 100);
+            if (Math.random() < 0.5) {
+                star = new Star(Math.random() * canvas.width, Math.random() * (canvas.height - 200) + 100);
+            }
 
             keys = [];
             platforms = [];
@@ -261,7 +263,7 @@
                 if (platform.label !== undefined) {
                     ctx.font = '14px Arial';
                     ctx.fillStyle = 'white';
-                    ctx.fillText('Platform ' + platform.label, platform.x + 20, platform.y + 15);
+                    ctx.fillText('Platform ' + platform.label, platform.x + 30, platform.y + 10);
                 }
                 platform.enemies.forEach(enemy => {
                     enemy.update()
@@ -289,6 +291,16 @@
                 if (isGameOver) {
                     return;
                 }
+                // Automatically scroll the screen
+                player.y += scrollSpeed;
+                if (star) star.y +=scrollSpeed;
+                platforms.forEach(platform => {
+                    platform.y += scrollSpeed;
+                    platform.enemies.forEach(enemy => {
+                        enemy.y += scrollSpeed; // Make sure enemies on platforms move too
+                    });
+                });
+
                 // Right arrow key increases velocity to the right
                 if (keys[39]) {
                     if (player.velX < player.speed) {
@@ -318,6 +330,7 @@
                 // Check for screen scroll
                 if (player.y < canvas.height / 4) {
                     let scrollAmount = Math.abs(player.velY);
+                    if (star) star.y += scrollAmount;
                     player.y += scrollAmount;
                     platforms.forEach(platform => {
                         platform.y += scrollAmount;
@@ -326,6 +339,9 @@
                         });
                     });
                     lastPlatformY += scrollAmount;
+                    if (Math.random() < 0.003) {
+                        star = new Star(Math.random() * canvas.width, Math.random() + 50);
+                    }
                 }
                 // Array to collect platforms that need to be reset
                 let resetPlatforms = [];
@@ -410,7 +426,7 @@
                 if (star) star.draw(ctx);
                 checkStarCollision();
                 updateImmunity();
-                // if (immune) drawImmunityTimer(ctx);
+                if (immune) drawImmunityTimer(ctx);
 
                 // Request to update the game in the next frame
                 animationFrameId = requestAnimationFrame(updateGame);
