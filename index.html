@@ -68,6 +68,7 @@
                 jumping: false
             };
 
+            keys = [];
             platforms = [];
             platformsTracker = new Array(10).fill(false);
             platformsTracker[0] = true;
@@ -75,7 +76,7 @@
             score = 0;
 
             for (let i = 0; i < 10; i++) {
-                platforms.push({
+                let platform = {
                     x: Math.random() * (canvas.width - (100 + Math.random() * 150)),
                     y: canvas.height - (100 * i) - 50,
                     width: 100 + Math.random() * 100,
@@ -85,20 +86,18 @@
                     label: i === 9 ? 10 : undefined,
                     index: i,
                     enemies: [],
-                    enemySpawnCounter: 1,
-                    showEnemies: false
-                });
+                };
+                platforms.push(platform);
+                if (Math.random() < 0.05) { // 5% chance to spawn new enemies on the platform
+                    for (let j = 0; j < 2; ++j) {
+                        let type = Math.random() < 0.5 ? 'Type1' : 'Type2';
+                        let enemy = new Enemy(type, platform.x + (platform.width / 5) * (j + 1), platform.y, platform);
+                        platform.enemies.push(enemy);
+                    }
+                }
             }
-
-            platforms[9].enemies.push(new Enemy('Type1', platforms[9].x + platforms[9].width * 0.25, platforms[9].y, platforms[9]));
-            platforms[9].enemies.push(new Enemy('Type1', platforms[9].x + platforms[9].width * 0.75, platforms[9].y, platforms[9]));
-            platforms[9].enemies.push(new Enemy('Type2', platforms[9].x + (platforms[9].width / 2) - 10, platforms[9].y, platforms[9]));
-            platforms[9].enemies.push(new Enemy('Type2', platforms[9].x + (platforms[9].width / 2) - 10 + 25, platforms[9].y, platforms[9]));
-
             platforms[0].x = player.x - platforms[0].width / 2;
             platforms[0].y = player.y + player.height;
-
-            keys = [];
         }
         window.addEventListener('keydown', function(e) {
             keys[e.keyCode] = true;
@@ -107,7 +106,7 @@
                 player.velY = baseJump - Math.abs(player.velX);
             }
         });
-        
+
         window.addEventListener('keyup', function(e) {
             keys[e.keyCode] = false;
         });
@@ -121,12 +120,10 @@
                     ctx.fillStyle = 'white';
                     ctx.fillText('Platform ' + platform.label, platform.x + 20, platform.y + 15);
                 }
-                if (platform.showEnemies) {
-                    platform.enemies.forEach(enemy => {
-                        enemy.update()
-                        enemy.draw(ctx);
-                    });
-                }
+                platform.enemies.forEach(enemy => {
+                    enemy.update()
+                    enemy.draw(ctx);
+                });
             });
         }
         
@@ -159,11 +156,9 @@
                 player.y += scrollAmount;
                 platforms.forEach(platform => {
                     platform.y += scrollAmount;
-                    if (platform.showEnemies) {
-                        platform.enemies.forEach(enemy => {
+                    platform.enemies.forEach(enemy => {
                         enemy.y = platform.y; // This assumes you want the enemy to appear on top of the platform
-                        });
-                    }
+                    });
                 });
                 lastPlatformY += scrollAmount;
             }
@@ -210,12 +205,6 @@
                         enemy.y += 5; // Make enemies fall at the same rate as the platform
                     });
                 }
-                if (platform.label !== undefined && platform.enemySpawnCounter % 2 === 0) { // Every two resets, spawn enemies
-                    platform.showEnemies = true;
-                }
-                else {
-                    platform.showEnemies = false;
-                }
 
                 // Reset platforms that go off screen and collect them for sorting
                 if (platform.y > canvas.height) {
@@ -224,7 +213,6 @@
                     platform.timer = 0;
                     if (platform.label !== undefined) {
                         platform.label += 10; // Increment label by 10
-                        platform.enemySpawnCounter++;
                     }
                     resetPlatforms.push(platform); // Add to the list for sorting
                 }           
@@ -236,12 +224,14 @@
                 resetPlatforms.forEach((platform, sortedIndex) => {
                     platform.y = -70 - (sortedIndex * 10);
                     platform.x = Math.random() * (canvas.width - platform.width);
-                    if (platform.label !== undefined) {
-                        platform.enemies.forEach((enemy, i) => {
-                            enemy.y = platform.y; // Make enemies fall at the same rate as the platform
-                            enemy.x = platform.x + (platform.width / 5) * (i + 1) - enemy.width / 2;
-                        });
-                    }   
+                    platform.enemies = []; // Clear existing enemies for the reset platform
+                    if (Math.random() < 0.05) { // 5% chance to spawn new enemies on the platform
+                        for (let j = 0; j < 2; ++j) {
+                            let type = Math.random() < 0.5 ? 'Type1' : 'Type2';
+                            let enemy = new Enemy(type, platform.x + (platform.width / 5) * (j + 1), platform.y, platform);
+                            platform.enemies.push(enemy);
+                        }
+                    }      
                 });
             }
             // Clear the canvas and redraw everything
