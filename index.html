@@ -143,15 +143,6 @@
             }
         }
 
-        function updatePlatformMovement(platform) {
-            if (platform.isMoving) {
-                platformMovementTimer-= 1 / 60; // decrement the timer by the frame rate
-                if (platformMovementTimer <= 0) {
-                    platform.isMoving = false; // reset movement
-                }
-            }
-        }
-
         class Enemy {
             constructor(type, x, y, platform) {
                 this.type = type;
