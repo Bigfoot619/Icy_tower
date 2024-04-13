@@ -125,6 +125,16 @@
                 }
             }
         }
+
+        function updatePlatformMovement(platform) {
+            if (platform.isMoving) {
+                platformMovementTimer-= 1 / 60; // decrement the timer by the frame rate
+                if (platformMovementTimer <= 0) {
+                    platform.isMoving = false; // reset movement
+                }
+            }
+        }
+
         class Enemy {
             constructor(type, x, y, platform) {
                 this.type = type;
@@ -132,7 +142,7 @@
                 this.y = y; // Position adjustment if needed
                 this.width = 10;
                 this.height = 20;
-                this.velX = type === 'Type2' ? 2 : undefined // Initialize horizontal velocity to 0         
+                this.velX = type === 'Type2' ? 2 : undefined // Initialize horizontal velocity to 0    
                 this.platform = platform;
             }
         
@@ -215,6 +225,7 @@
             score = 0;
 
             for (let i = 0; i < 10; i++) {
+                let isMoving = Math.random() < 0.06; // 6% chance that a platform will move
                 let platform = {
                     x: Math.random() * (canvas.width - (100 + Math.random() * 150)),
                     y: canvas.height - (100 * i) - 50,
@@ -225,6 +236,11 @@
                     label: i === 9 ? 10 : undefined,
                     index: i,
                     enemies: [],
+                    platformMovementTimer: 3,
+                    moving: isMoving,
+                    moveSpeed: isMoving ? (Math.random() * 2 - 1) : 0, // Speed can be positive or negative
+                    moveRange: isMoving ? Math.random() * 50 + 70 : 0, // How far the platform moves up and down
+                    originalY: canvas.height - (100 * i) - 50
                 };
                 platforms.push(platform);
                 if (Math.random() < 0.05) { // 5% chance to spawn new enemies on the platform
@@ -299,6 +315,20 @@
                     platform.enemies.forEach(enemy => {
                         enemy.y += scrollSpeed; // Make sure enemies on platforms move too
                     });
+                });
+
+                //platforms moving up and down
+                platforms.forEach(platform => {
+                    if (platform.moving) {
+                        platform.y += platform.moveSpeed;
+                        platform.enemies.forEach(enemy => {
+                            enemy.y += platform.moveSpeed;
+                        });
+                        // Reverse movement direction if the platform moves out of its range
+                        if (platform.y < platform.originalY - platform.moveRange || platform.y > platform.originalY + platform.moveRange) {
+                            platform.moveSpeed *= -1;
+                        }
+                    }
                 });
 
                 // Right arrow key increases velocity to the right
