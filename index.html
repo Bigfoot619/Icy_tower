@@ -82,6 +82,23 @@
         let immuneTimer = 0; // Timer for immunity
         let scrollSpeed = 0.5; // Number of pixels to scroll each frame
 
+        let playerImg, platformImg, backgroundImg;
+
+        function preloadImages() {
+            playerImg = new Image();
+            playerImg.src = 'playerImg.png'; // Replace with your actual image path
+
+            platformImg = new Image();
+            platformImg.src = 'platform.png'; // Replace with your actual image path
+
+            backgroundImg = new Image();
+            backgroundImg.src = 'background.jpg'; // Replace with your actual image path
+        }
+
+        function drawBackground(ctx) {
+            ctx.drawImage(backgroundImg, 0, 0, canvas.width, canvas.height);
+        }
+
         class Star {
             constructor(x, y) {
                 this.x = x;
@@ -166,10 +183,9 @@
         }
 
         function drawPlayer(ctx) {
-            // Draw the player
-            ctx.fillStyle = 'red';
-            ctx.fillRect(player.x, player.y, player.width, player.height);
+            ctx.drawImage(playerImg, player.x, player.y, player.width, player.height);
         }
+
         function drawScore(ctx) {
         // Display the score
         ctx.font = '20px Arial';
@@ -203,6 +219,7 @@
             isGameOver = false;
             cancelAnimationFrame(animationFrameId); // Cancel any previous game loop that might still be running
             gameOverScreen.style.display = "none";
+            drawBackground(ctx);
             player = {
                 x: canvas.width / 2,
                 y: canvas.height - 150,
@@ -274,8 +291,7 @@
 
         function drawPlatformsAndEnemies() {
             platforms.forEach(platform => {
-                ctx.fillStyle = 'black';
-                ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
+                ctx.drawImage(platformImg, platform.x, platform.y, platform.width, platform.height);
                 if (platform.label !== undefined) {
                     ctx.font = '14px Arial';
                     ctx.fillStyle = 'white';
@@ -449,6 +465,7 @@
                 }
                 // Clear the canvas and redraw everything
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
+                drawBackground(ctx);
                 drawPlatformsAndEnemies();
                 drawPlayer(ctx);
                 drawScore(ctx);
@@ -464,6 +481,7 @@
             updateGame();
         }
         // Start the game loop
+        preloadImages();
         initializeGame();
         startGame();
     </script>
