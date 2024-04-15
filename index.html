@@ -215,7 +215,7 @@
                 x: canvas.width / 2,
                 y: canvas.height - 150,
                 width: 20,
-                height: 20,
+                height: 22,
                 speed: 6,
                 velX: 0,
                 velY: 0,
@@ -233,23 +233,25 @@
             score = 0;
 
             for (let i = 0; i < 10; i++) {
-                let isMoving = Math.random() < 0.1; // 6% chance that a platform will move
                 let platform = {
                     x: Math.random() * (canvas.width - (100 + Math.random() * 150)),
                     y: canvas.height - (100 * i) - 50,
                     width: 100 + Math.random() * 100,
-                    height: 15,
+                    height: 16,
                     timer: 0,
                     falling: false,
                     label: i === 9 ? 10 : undefined,
                     index: i,
                     enemies: [],
-                    platformMovementTimer: 3,
-                    moving: i !== 9 && i !== 0 ? isMoving : false,
-                    moveSpeed: isMoving ? (Math.random() * 3.5 - 1) : 0, // Speed can be positive or negative
-                    moveRange: isMoving ? Math.random() * 50 + 200 : 0, // How far the platform moves up and down
+                    moving: (i !== 9 && i !== 0 && Math.random() < 0.1) ? true : false, // Directly use the random chance to determine movement
+                    moveSpeed: 0, // Initialize moveSpeed to 0, which we will set conditionally
+                    moveRange: 0, // Initialize moveRange to 0, which we will set conditionally
                     originalY: canvas.height - (100 * i) - 50
                 };
+                if (platform.moving) {
+                    platform.moveSpeed = Math.random() * 3 - 1; // Speed can be positive or negative
+                    platform.moveRange = Math.random() * 50 + 150; // How far the platform moves up and down
+                }
                 platforms.push(platform);
                 if (Math.random() < 0.1 && i > 1) { // 5% chance to spawn new enemies on the platform
                     for (let j = 0; j < 2; ++j) {
@@ -438,10 +440,15 @@
                 if (resetPlatforms.length > 0) {
                     resetPlatforms.sort((a, b) => a.index - b.index);
                     resetPlatforms.forEach((platform, sortedIndex) => {
-                        platform.y = -70 - (sortedIndex * 15);
-                        platform.originalY = -70 - (sortedIndex * 15);
+                        platform.y = -150 - (sortedIndex * 20);
+                        platform.originalY = platform.y;
                         platform.x = Math.random() * (canvas.width - platform.width);
-                        platform.moving = Math.random() < 0.1; // 6% chance that a platform will move
+                        platform.moving = (platform.index !== 9) && (Math.random() < 0.1); // 6% chance that a platform will move
+                        if (platform.moving) {
+                            platform.moveSpeed = Math.random() * 3 - 1; // Speed can be positive or negative
+                            platform.moveRange = Math.random() * 50 + 150; // How far the platform moves up and down
+                        }
+
                         platform.enemies = []; // Clear existing enemies for the reset platform
                         if (Math.random() < 0.1) { // 5% chance to spawn new enemies on the platform
                             for (let j = 0; j < 2; ++j) {
