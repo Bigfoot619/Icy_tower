@@ -245,7 +245,7 @@
                     index: i,
                     enemies: [],
                     platformMovementTimer: 3,
-                    moving: i !== 9 ? isMoving : undefined,
+                    moving: i !== 9 && i !== 0 ? isMoving : false,
                     moveSpeed: isMoving ? (Math.random() * 3.5 - 1) : 0, // Speed can be positive or negative
                     moveRange: isMoving ? Math.random() * 50 + 200 : 0, // How far the platform moves up and down
                     originalY: canvas.height - (100 * i) - 50
@@ -331,10 +331,6 @@
                         platform.enemies.forEach(enemy => {
                             enemy.y += platform.moveSpeed;
                         });
-                        // Reverse movement direction if the platform moves out of its range
-                        if (platform.y < platform.originalY - platform.moveRange || platform.y > platform.originalY + platform.moveRange) {
-                            platform.moveSpeed *= -1;
-                        }
                     }
                 });
 
@@ -442,7 +438,8 @@
                 if (resetPlatforms.length > 0) {
                     resetPlatforms.sort((a, b) => a.index - b.index);
                     resetPlatforms.forEach((platform, sortedIndex) => {
-                        platform.y = -70 - (sortedIndex * 10);
+                        platform.y = -70 - (sortedIndex * 15);
+                        platform.originalY = -70 - (sortedIndex * 15);
                         platform.x = Math.random() * (canvas.width - platform.width);
                         platform.moving = Math.random() < 0.1; // 6% chance that a platform will move
                         platform.enemies = []; // Clear existing enemies for the reset platform
