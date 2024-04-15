@@ -246,8 +246,8 @@
                     enemies: [],
                     platformMovementTimer: 3,
                     moving: isMoving,
-                    moveSpeed: isMoving ? (Math.random() * 2 - 1) : 0, // Speed can be positive or negative
-                    moveRange: isMoving ? Math.random() * 50 + 70 : 0, // How far the platform moves up and down
+                    moveSpeed: isMoving ? (Math.random() * 4.5 - 1) : 0, // Speed can be positive or negative
+                    moveRange: isMoving ? Math.random() * 50 + 500 : 0, // How far the platform moves up and down
                     originalY: canvas.height - (100 * i) - 50
                 };
                 platforms.push(platform);
