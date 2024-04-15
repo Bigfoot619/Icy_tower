@@ -221,7 +221,7 @@
                 velY: 0,
                 jumping: false
             };
-            if (Math.random() < 0.5) {
+            if (Math.random() < 0.4) {
                 star = new Star(Math.random() * canvas.width, Math.random() * (canvas.height - 200) + 100);
             }
 
@@ -233,7 +233,7 @@
             score = 0;
 
             for (let i = 0; i < 10; i++) {
-                let isMoving = Math.random() < 0.06; // 6% chance that a platform will move
+                let isMoving = Math.random() < 0.1; // 6% chance that a platform will move
                 let platform = {
                     x: Math.random() * (canvas.width - (100 + Math.random() * 150)),
                     y: canvas.height - (100 * i) - 50,
@@ -245,13 +245,13 @@
                     index: i,
                     enemies: [],
                     platformMovementTimer: 3,
-                    moving: isMoving,
-                    moveSpeed: isMoving ? (Math.random() * 4.5 - 1) : 0, // Speed can be positive or negative
-                    moveRange: isMoving ? Math.random() * 50 + 500 : 0, // How far the platform moves up and down
+                    moving: i !== 9 ? isMoving : undefined,
+                    moveSpeed: isMoving ? (Math.random() * 3.5 - 1) : 0, // Speed can be positive or negative
+                    moveRange: isMoving ? Math.random() * 50 + 200 : 0, // How far the platform moves up and down
                     originalY: canvas.height - (100 * i) - 50
                 };
                 platforms.push(platform);
-                if (Math.random() < 0.05) { // 5% chance to spawn new enemies on the platform
+                if (Math.random() < 0.1 && i > 1) { // 5% chance to spawn new enemies on the platform
                     for (let j = 0; j < 2; ++j) {
                         let type = Math.random() < 0.5 ? 'Type1' : 'Type2';
                         let enemy = new Enemy(type, platform.x + (platform.width / 5) * (j + 1), platform.y, platform);
@@ -444,8 +444,9 @@
                     resetPlatforms.forEach((platform, sortedIndex) => {
                         platform.y = -70 - (sortedIndex * 10);
                         platform.x = Math.random() * (canvas.width - platform.width);
+                        platform.moving = Math.random() < 0.1; // 6% chance that a platform will move
                         platform.enemies = []; // Clear existing enemies for the reset platform
-                        if (Math.random() < 0.05) { // 5% chance to spawn new enemies on the platform
+                        if (Math.random() < 0.1) { // 5% chance to spawn new enemies on the platform
                             for (let j = 0; j < 2; ++j) {
                                 let type = Math.random() < 0.5 ? 'Type1' : 'Type2';
                                 let enemy = new Enemy(type, platform.x + (platform.width / 5) * (j + 1), platform.y, platform);
