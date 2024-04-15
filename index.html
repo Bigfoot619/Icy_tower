@@ -243,13 +243,13 @@
                     label: i === 9 ? 10 : undefined,
                     index: i,
                     enemies: [],
-                    moving: (i !== 9 && i !== 0 && Math.random() < 0.1) ? true : false, // Directly use the random chance to determine movement
+                    moving: (i !== 9 && i !== 0 && Math.random() < 0.05) ? true : false, // Directly use the random chance to determine movement
                     moveSpeed: 0, // Initialize moveSpeed to 0, which we will set conditionally
                     moveRange: 0, // Initialize moveRange to 0, which we will set conditionally
                     originalY: canvas.height - (100 * i) - 50
                 };
                 if (platform.moving) {
-                    platform.moveSpeed = Math.random() * 3 - 1; // Speed can be positive or negative
+                    platform.moveSpeed = Math.random() * 3 - 1.2; // Speed can be positive or negative
                     platform.moveRange = Math.random() * 50 + 150; // How far the platform moves up and down
                 }
                 platforms.push(platform);
@@ -440,10 +440,10 @@
                 if (resetPlatforms.length > 0) {
                     resetPlatforms.sort((a, b) => a.index - b.index);
                     resetPlatforms.forEach((platform, sortedIndex) => {
-                        platform.y = -150 - (sortedIndex * 20);
+                        platform.y = -150 - (16 * (sortedIndex + Math.random()) );
                         platform.originalY = platform.y;
                         platform.x = Math.random() * (canvas.width - platform.width);
-                        platform.moving = (platform.index !== 9) && (Math.random() < 0.1); // 6% chance that a platform will move
+                        platform.moving = (platform.index !== 9) && (Math.random() < 0.07); // 6% chance that a platform will move
                         if (platform.moving) {
                             platform.moveSpeed = Math.random() * 3 - 1; // Speed can be positive or negative
                             platform.moveRange = Math.random() * 50 + 150; // How far the platform moves up and down
