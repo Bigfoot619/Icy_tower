@@ -56,6 +56,12 @@
     </style>
 </head>
 <body>
+    <!-- Audio element for background music -->
+    <audio id="backgroundMusic" src="background_music.mp3" loop></audio>
+
+     <!-- Button to play the audio -->
+     <button onclick="toggleSound()">Add Sound</button> 
+
     <!-- Canvas element where the game will be rendered -->
     <canvas id="gameCanvas" width="750" height="700"></canvas>
     <div id="gameOverScreen">
@@ -64,6 +70,11 @@
         <div id="leaderboard"></div>
     </div>
     <script>
+        const backgroundMusic = document.getElementById('backgroundMusic');
+
+        function toggleSound() {
+            backgroundMusic.play();
+        }
         // Getting a reference to the canvas and its context to draw on it
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
@@ -243,7 +254,7 @@
                     label: i === 9 ? 10 : undefined,
                     index: i,
                     enemies: [],
-                    moving: (i !== 9 && i !== 0 && Math.random() < 0.05) ? true : false, // Directly use the random chance to determine movement
+                    moving: (i !== 9 && i !== 0 && Math.random() < 0.1) ? true : false, // Directly use the random chance to determine movement
                     moveSpeed: 0, // Initialize moveSpeed to 0, which we will set conditionally
                     moveRange: 0, // Initialize moveRange to 0, which we will set conditionally
                     originalY: canvas.height - (100 * i) - 50
@@ -253,7 +264,7 @@
                     platform.moveRange = Math.random() * 50 + 150; // How far the platform moves up and down
                 }
                 platforms.push(platform);
-                if (Math.random() < 0.1 && i > 1) { // 5% chance to spawn new enemies on the platform
+                if (Math.random() < 0.15 && i > 1) { // 15% chance to spawn new enemies on the platform
                     for (let j = 0; j < 2; ++j) {
                         let type = Math.random() < 0.5 ? 'Type1' : 'Type2';
                         let enemy = new Enemy(type, platform.x + (platform.width / 5) * (j + 1), platform.y, platform);
@@ -329,9 +340,9 @@
                 //platforms moving up and down
                 platforms.forEach(platform => {
                     if (platform.moving) {
-                        platform.y += platform.moveSpeed;
+                        platform.x += platform.moveSpeed;
                         platform.enemies.forEach(enemy => {
-                            enemy.y += platform.moveSpeed;
+                            enemy.x += platform.moveSpeed;
                         });
                     }
                 });
